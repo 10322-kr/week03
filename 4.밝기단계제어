@@ -1,0 +1,107 @@
+#week03_4
+// 핀 설정
+const int ledPin = 9;   // PWM 가능한 LED 핀 (~)
+const int buttonIncreasePin = 2; // 밝기 증가 버튼
+const int buttonDecreasePin = 3; // 밝기 감소 버튼
+const int buttonOffPin = 4;      // 즉시 끄기 버튼
+
+// 밝기 관련 변수
+int brightness = 50;  // 현재 밝기 값 (0-255)
+const int brightnessStep = 25; // 10% 단위 (255 * 0.1)
+
+// 버튼 관련 변수
+const unsigned long debounceDelay = 50; // 디바운스 딜레이 (ms)
+const unsigned long autoRepeatDelay = 500; // 오토 리핏 시작 딜레이 (ms)
+const unsigned long autoRepeatInterval = 50; // 오토 리핏 반복 간격 (ms)
+unsigned long lastButtonPressTime = 0;
+bool isButtonHeld = false;
+int lastButtonState = 0;
+
+void setup() {
+  // 핀 모드 설정
+  pinMode(ledPin, OUTPUT);
+  pinMode(buttonIncreasePin, INPUT);
+  pinMode(buttonDecreasePin, INPUT);
+  pinMode(buttonOffPin, INPUT);
+
+  // 시리얼 통신 초기화 (디버깅용)
+  Serial.begin(9600);
+  Serial.println("LED 밝기 제어 시작");
+}
+
+void loop() {
+  // 현재 시간 저장
+  unsigned long currentTime = millis();
+
+  // 1. 밝기 증가 버튼 처리
+  handleButton(buttonIncreasePin, 1, currentTime);
+  
+  // 2. 밝기 감소 버튼 처리
+  handleButton(buttonDecreasePin, -1, currentTime);
+
+  // 3. 즉시 끄기 버튼 처리
+  int buttonOffState = digitalRead(buttonOffPin);
+  if (buttonOffState == HIGH) {
+    brightness = 0;
+    Serial.println("버튼 3 눌림: 즉시 끄기 (0%)");
+    delay(debounceDelay); // 디바운스 처리
+  }
+  
+  // 밝기 값 적용
+  analogWrite(ledPin, brightness);
+}
+
+// 버튼 상태를 처리하는 함수
+void handleButton(int buttonPin, int direction, unsigned long currentTime) {
+  int buttonState = digitalRead(buttonPin);
+
+  // 버튼이 눌렸을 때
+  if (buttonState == HIGH) {
+    // 버튼이 이전에 눌리지 않았을 때 (새로운 누름)
+    if (lastButtonState == LOW) {
+      lastButtonPressTime = currentTime;
+      isButtonHeld = false;
+      lastButtonState = HIGH;
+      
+      // 밝기 값 변경
+      brightness += direction * brightnessStep;
+      
+      // 밝기 값 클램핑 (0-255)
+      brightness = constrain(brightness, 0, 255);
+      
+      // 시리얼 출력
+      Serial.print("밝기 ");
+      Serial.print(direction > 0 ? "+10%" : "-10%");
+      Serial.print(", 현재 밝기: ");
+      Serial.println(brightness * 100 / 255);
+    }
+    // 버튼을 계속 누르고 있을 때 (길게 누름)
+    else {
+      // 오토 리핏 딜레이 시작
+      if (currentTime - lastButtonPressTime > autoRepeatDelay) {
+        // 오토 리핏 반복 간격 체크
+        if (currentTime - lastButtonPressTime >= autoRepeatDelay + (isButtonHeld ? autoRepeatInterval : 0)) {
+          lastButtonPressTime = currentTime;
+          isButtonHeld = true;
+          
+          // 밝기 값 변경
+          brightness += direction * brightnessStep;
+          
+          // 밝기 값 클램핑 (0-255)
+          brightness = constrain(brightness, 0, 255);
+          
+          // 시리얼 출력
+          Serial.print("자동 ");
+          Serial.print(direction > 0 ? "+10%" : "-10%");
+          Serial.print(", 현재 밝기: ");
+          Serial.println(brightness * 100 / 255);
+        }
+      }
+    }
+  }
+  // 버튼이 떼어졌을 때
+  else {
+    lastButtonState = LOW;
+    isButtonHeld = false;
+  }
+}

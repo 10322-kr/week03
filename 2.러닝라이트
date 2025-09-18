@@ -1,0 +1,59 @@
+#week03_2
+// 핀 설정
+const int buttonPin = 6;      // 푸시버튼 핀
+const int ledPins[] = {2, 3, 4, 5}; // LED 핀 배열
+
+// 상태 변수
+int ledCount = sizeof(ledPins) / sizeof(ledPins[0]); // LED 개수
+int currentLedIndex = 0; // 현재 켜질 LED의 인덱스
+
+// 엣지 검출을 위한 변수
+int lastButtonState = HIGH;   // 이전 버튼 상태 (초기 상태는 HIGH로 설정)
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50; // 디바운스 지연 시간 (밀리초)
+
+void setup() {
+  // LED 핀들을 모두 출력 모드로 설정
+  for (int i = 0; i < ledCount; i++) {
+    pinMode(ledPins[i], OUTPUT);
+  }
+
+  // 버튼 핀을 입력 모드로 설정
+  pinMode(buttonPin, INPUT);
+
+  // 시리얼 통신 시작 (디버깅용)
+  Serial.begin(9600);
+}
+
+void loop() {
+  // 현재 버튼 상태 읽기
+  int currentButtonState = digitalRead(buttonPin);
+
+  // 버튼 상태가 HIGH에서 LOW로 바뀌는 하강 엣지를 감지
+  // 엣지 검출과 디바운싱을 동시에 처리하여 의도치 않은 반복을 방지
+  if (currentButtonState != lastButtonState) {
+    // 디바운스 지연 시간 확인
+    if (millis() - lastDebounceTime > debounceDelay) {
+      if (currentButtonState == LOW) { // 버튼이 눌렸을 때 (하강 엣지)
+        // 모든 LED 끄기
+        for (int i = 0; i < ledCount; i++) {
+          digitalWrite(ledPins[i], LOW);
+        }
+
+        // 현재 인덱스에 해당하는 LED 켜기
+        digitalWrite(ledPins[currentLedIndex], HIGH);
+
+        // 다음 LED로 이동 (원형 인덱스)
+        // 모듈러 연산(%)을 사용하여 인덱스가 LED 개수를 넘어서면 0으로 되돌아감
+        currentLedIndex = (currentLedIndex + 1) % ledCount;
+
+        Serial.print("Button pressed. Current LED Index: ");
+        Serial.println(currentLedIndex);
+      }
+    }
+    lastDebounceTime = millis();
+  }
+
+  // 다음 loop를 위해 현재 상태를 이전 상태로 저장
+  lastButtonState = currentButtonState;
+}

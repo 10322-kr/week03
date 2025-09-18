@@ -1,0 +1,48 @@
+#week03_3
+// 핀 정의
+const int buttonPin1 = 2; // 버튼 1 (LED 1 켜기)
+const int buttonPin2 = 3; // 버튼 2 (LED 2 켜기)
+const int ledPin1 = 10;   // LED 1
+const int ledPin2 = 11;   // LED 2
+
+// 상태 변수 (0: LED 1 ON, 1: LED 2 ON)
+int mode = 0; 
+
+void setup() {
+  // 핀 모드 설정
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+
+  // 초기 상태 설정
+  digitalWrite(ledPin1, HIGH);
+  digitalWrite(ledPin2, LOW);
+}
+
+void loop() {
+  // 버튼 상태 읽기
+  int buttonState1 = digitalRead(buttonPin1);
+  int buttonState2 = digitalRead(buttonPin2);
+
+  // 상태 전환 로직
+  if (buttonState1 == HIGH) {
+    // 버튼 1이 눌렸을 때
+    mode = 0;
+  } else if (buttonState2 == HIGH) {
+    // 버튼 2가 눌렸을 때
+    mode = 1;
+  }
+
+  // LED 상태 일괄 갱신
+  if (mode == 0) {
+    digitalWrite(ledPin1, HIGH);
+    digitalWrite(ledPin2, LOW);
+  } else {
+    digitalWrite(ledPin1, LOW);
+    digitalWrite(ledPin2, HIGH);
+  }
+
+  // 10ms 지연 (버튼 디바운스 효과)
+  delay(10); 
+}

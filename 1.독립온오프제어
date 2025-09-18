@@ -1,0 +1,42 @@
+#week03_1
+// 핀 번호를 배열로 관리
+const int LED_PINS[] = {8, 9, 10}; // LED 1, 2, 3
+const int BUTTON_PINS[] = {2, 3, 4}; // 버튼 1, 2, 3
+
+// 버튼의 이전 상태를 저장하는 배열 (디바운싱용)
+int lastButtonStates[] = {HIGH, HIGH, HIGH};
+  
+// 디바운싱을 위한 시간 변수
+unsigned long lastDebounceTime[3] = {0, 0, 0};
+const unsigned long debounceDelay = 50;
+  
+void setup() {
+  // 핀 모드 설정
+  for (int i = 0; i < 3; i++) {
+    pinMode(LED_PINS[i], OUTPUT);
+    digitalWrite(LED_PINS[i], LOW); // 초기 상태: LED 끔
+    pinMode(BUTTON_PINS[i], INPUT_PULLUP); // 내부 풀업 저항 활성화
+  }
+}
+  
+void loop() {
+  for (int i = 0; i < 3; i++) {
+    // 버튼의 현재 상태 읽기
+    int currentButtonState = digitalRead(BUTTON_PINS[i]);
+  
+    // 이전 상태와 다르면 디바운싱 타이머 시작
+    if (currentButtonState != lastButtonStates[i]) {
+      lastDebounceTime[i] = millis();
+    }
+  
+    // 디바운스 딜레이 이후 상태가 안정되면 동작 실행
+    if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+      // 버튼의 상태를 LED에 바로 반영
+      // 버튼이 눌리면(LOW) LED를 켜고(HIGH), 버튼을 떼면(HIGH) LED를 끕니다(LOW).
+      digitalWrite(LED_PINS[i], !currentButtonState);
+    }
+  
+    // 현재 상태를 이전 상태로 저장
+    lastButtonStates[i] = currentButtonState;
+  }
+}
